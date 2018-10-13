@@ -17,21 +17,50 @@ namespace Task3
             InitializeComponent();
         }
         List<Point> A, B;
-
+        float mult = 1;
+        float multMax = 20;
+        float speed = 0.005f;
+        bool MoveActive = false;
+        Point LastStart;
+        Point Start = new Point(0, 0);
+        Point ClickPoint;
+        Bitmap clone;
         Bitmap bitmap;
-        Graphics G;
         private void MainForm_Load(object sender, EventArgs e)
         {
             bitmap = new Bitmap(output.Width, output.Height);
-            G = Graphics.FromImage(bitmap);
+            
             A = new List<Point>();
             B = new List<Point>();
             Clear();
+            output.MouseWheel += Output_MouseWheel;
         }
-        private void Upd() => output.Image = bitmap;
+
+        private void Output_MouseWheel(object sender, MouseEventArgs e)
+        {
+            int X = (int)(e.X / mult) + Start.X;
+            int Y = (int)(e.Y / mult) + Start.Y;
+            mult += e.Delta * speed;
+            mult = Math.Max(mult, 1);
+            mult = Math.Min(mult, multMax);
+            X -= (int)(e.X / mult);
+            Y -= (int)(e.Y / mult);
+            SetStart(X, Y);
+            Upd();
+        }
+
+        private void Upd()
+        {
+            if (clone != null)
+                clone.Dispose();
+            clone = bitmap.Clone(new Rectangle(Start, new Size((int)(output.Width / mult), (int)(output.Height / mult))), bitmap.PixelFormat);
+            output.Image = clone;
+        }
+
         private void Clear()
         {
-            G.Clear(Color.White);
+
+            Graphics.FromImage(bitmap).Clear(Color.White);
             A.Clear();
             B.Clear();
             Upd();
@@ -41,26 +70,64 @@ namespace Task3
 
         private void output_MouseDown(object sender, MouseEventArgs e)
         {
-            if(A.Count < 3)
+            if (AddPointBtn.Checked && e.Button == MouseButtons.Left)
+                AddPoint(new Point((int)(e.X / mult) + Start.X, (int)(e.Y / mult) + Start.Y));
+            else
             {
-                A.Add(e.Location);
-                if (A.Count == 3)
-                    G.DrawPolygon(Pens.Green, A.ToArray());
+                ClickPoint = e.Location;
+                MoveActive = true;
+                LastStart = Start;
             }
-            else if(B.Count < 3)
+            Upd();
+        }
+        
+
+        private void output_MouseUp(object sender, MouseEventArgs e) => MoveActive = false;
+
+        private void output_MouseMove(object sender, MouseEventArgs e)
+        {
+            if(MoveActive)
             {
-                B.Add(e.Location);
-                if(B.Count == 3)
+                int X = (int)((-e.X + ClickPoint.X) / mult) + LastStart.X;
+                int Y = (int)((-e.Y + ClickPoint.Y) / mult) + LastStart.Y;
+                SetStart(X, Y);
+                Upd();
+            }
+        }
+
+        private void SetStart(int X, int Y)
+        {
+            X = Math.Max(0, X);
+            X = Math.Min((int)(output.Width * (1 - 1 / mult)), X);
+            Y = Math.Max(0, Y);
+            Y = Math.Min((int)(output.Height * (1 - 1 / mult)), Y);
+            Start = new Point(X, Y);
+        }
+
+        private void AddPoint(Point Location)
+        {
+            int R = 3;
+            if (A.Count < 3)
+            {
+                A.Add(Location);
+                DrawTools.DrawElipse(bitmap, Location, R, R, Color.Green);
+                if (A.Count == 3)
+                    DrawTools.DrawPolygon(bitmap, A, Color.Green);
+            }
+            else if (B.Count < 3)
+            {
+                B.Add(Location);
+                DrawTools.DrawElipse(bitmap, Location, R, R, Color.Red);
+                if (B.Count == 3)
                 {
-                    G.DrawPolygon(Pens.Red, B.ToArray());
+                    DrawTools.DrawPolygon(bitmap, B, Color.Red);
                     List<Point> Cross = TrianglesTools.TriangleCross(A, B);
                     if (Cross != null)
-                        G.FillPolygon(Brushes.Blue, Cross.ToArray());
+                        DrawTools.FillPolygon(bitmap, Cross, Color.Blue);
                     A.Clear();
                     B.Clear();
                 }
             }
-            Upd();
         }
     }
 }
