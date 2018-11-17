@@ -37,6 +37,7 @@
             // 
             // output
             // 
+            this.output.BackColor = System.Drawing.Color.White;
             this.output.Location = new System.Drawing.Point(13, 50);
             this.output.Name = "output";
             this.output.Size = new System.Drawing.Size(1342, 617);

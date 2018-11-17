@@ -29,7 +29,6 @@ namespace Task3
         private void MainForm_Load(object sender, EventArgs e)
         {
             bitmap = new Bitmap(output.Width, output.Height);
-            
             A = new List<Point>();
             B = new List<Point>();
             Clear();
@@ -51,15 +50,15 @@ namespace Task3
 
         private void Upd()
         {
-            if (clone != null)
-                clone.Dispose();
+            clone?.Dispose();
             clone = bitmap.Clone(new Rectangle(Start, new Size((int)(output.Width / mult), (int)(output.Height / mult))), bitmap.PixelFormat);
             output.Image = clone;
         }
 
         private void Clear()
         {
-
+            bitmap?.Dispose();
+            bitmap = new Bitmap(output.Width, output.Height);
             Graphics.FromImage(bitmap).Clear(Color.White);
             A.Clear();
             B.Clear();
